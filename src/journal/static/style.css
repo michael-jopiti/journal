@@ -1,0 +1,160 @@
+/* Swiss modernist system: grotesque type, hairline rules, 12-col-ish grid,
+   monochrome + one accent. Page colours are set per day via [data-color]
+   rules emitted by base.html from journal/palette.py. */
+
+:root {
+  --bg: #F2F1EA;
+  --fg: #000;
+  --accent: #FF4D0D; /* International Orange */
+  --gutter: clamp(16px, 3vw, 40px);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 500;
+}
+
+a { color: inherit; text-decoration: none; }
+a:hover, a:focus-visible { background: var(--fg); color: var(--bg); }
+
+.page { max-width: 1200px; margin: 0 auto; padding: var(--gutter); }
+.sr { position: absolute; left: -9999px; }
+
+/* Masthead */
+.display {
+  margin: 0 0 var(--gutter);
+  font-size: clamp(48px, 12vw, 140px);
+  line-height: .9;
+  letter-spacing: -.04em;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.row { display: flex; flex-wrap: wrap; gap: 0 var(--gutter); justify-content: space-between; padding: 8px 0; }
+.rule { border-top: 1px solid var(--fg); }
+.meta { font-size: 13px; text-transform: uppercase; letter-spacing: .02em; }
+.masthead { margin-bottom: var(--gutter); }
+#status[data-state="saving"], #status[data-state="error"] { color: var(--accent); }
+
+/* Sections: label column left, fields right */
+.block {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--gutter);
+  padding: var(--gutter) 0;
+  border-top: 1px solid var(--fg);
+}
+.head { align-self: start; }
+.prompt { margin: 8px 0 0; font-size: 14px; max-width: 32ch; }
+.fields { display: grid; gap: 28px; }
+.field { display: grid; gap: 6px; }
+.field small { font-size: 13px; opacity: .8; }
+
+.label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.num { display: inline-block; min-width: 2.2em; font-variant-numeric: tabular-nums; }
+
+/* Inputs: brutalist outlined boxes from the UI kit */
+textarea, input[type="text"] {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--fg);
+  border-radius: 0;
+  padding: 10px 12px;
+  resize: vertical;
+}
+textarea:focus, input[type="text"]:focus { outline: 3px solid var(--accent); outline-offset: 0; }
+::placeholder { color: var(--fg); opacity: .45; }
+
+/* 1-5 scale */
+.scale { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.scale label { cursor: pointer; }
+.scale input, .swatch input { position: absolute; opacity: 0; }
+.scale span {
+  display: grid; place-items: center;
+  width: 48px; height: 48px;
+  border: 1px solid var(--fg);
+  font-weight: 800;
+}
+.scale input:checked + span { background: var(--fg); color: var(--bg); }
+.scale input:focus-visible + span, .swatch input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+.scale small { margin-left: 8px; }
+
+/* Colour picker */
+.swatches { grid-column: 2; display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch {
+  position: relative; width: 48px; height: 48px;
+  background: var(--sw); border: 1px solid var(--fg); cursor: pointer;
+}
+.swatch:has(input:checked) { outline: 3px solid var(--accent); outline-offset: 2px; }
+.swatch:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+/* Black swatch needs a visible edge on a black page. */
+[data-color="black"] .swatch { border-color: #fff; }
+
+/* Archive */
+.archive { list-style: none; margin: 0; padding: 0; }
+.archive li { border-top: 1px solid var(--fg); }
+.archive .row { justify-content: flex-start; align-items: center; padding: 14px 0; }
+.archive .row span:nth-child(2) { font-weight: 800; min-width: 8em; }
+.dot { width: 20px; height: 20px; background: var(--bg); border: 1px solid var(--fg); }
+
+footer { margin-top: var(--gutter); }
+
+@media (max-width: 720px) {
+  .block { grid-template-columns: 1fr; gap: 16px; }
+  .swatches { grid-column: 1; }
+}
+
+/* Home */
+.cta {
+  display: block; margin-top: var(--gutter); padding: 18px 20px;
+  background: var(--accent); color: #000;
+  font-size: clamp(24px, 4vw, 40px); font-weight: 800; letter-spacing: -.02em; text-transform: uppercase;
+}
+.cta:hover, .cta:focus-visible { background: var(--fg); color: var(--bg); }
+.tabs { display: flex; border: 1px solid var(--fg); margin-bottom: var(--gutter); }
+.tabs a { flex: 1; padding: 10px 12px; text-align: center; font-weight: 800; text-transform: uppercase; font-size: 13px; }
+.tabs a + a { border-left: 1px solid var(--fg); }
+.tabs a[aria-current] { background: var(--fg); color: var(--bg); }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--gutter); margin-bottom: var(--gutter); }
+.chart { margin: 0; border-top: 1px solid var(--fg); }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart .grid { stroke: var(--fg); stroke-opacity: .25; stroke-width: 1; }
+.chart .line { fill: none; stroke: var(--fg); stroke-width: 2; stroke-linejoin: round; }
+.chart circle { fill: var(--accent); stroke: var(--fg); stroke-width: 1; }
+.days { border-top: 1px solid var(--fg); padding-top: var(--gutter); }
+#goto { width: auto; padding: 2px 6px; margin-left: 6px; }
+
+/* Buttons */
+.btn {
+  font: inherit; font-weight: 800; text-transform: uppercase; font-size: 13px;
+  background: var(--fg); color: var(--bg); border: 1px solid var(--fg); border-radius: 0;
+  padding: 10px 18px; cursor: pointer;
+}
+.btn:hover, .btn:focus-visible { background: var(--accent); color: #000; border-color: var(--accent); outline: none; }
+
+/* Pictures */
+.dropzone {
+  display: grid; place-items: center; min-height: 96px; padding: 16px; text-align: center;
+  border: 1px dashed var(--fg); cursor: pointer; font-weight: 800; text-transform: uppercase; font-size: 13px;
+}
+.dropzone:hover, .dropzone.over, .field:has(input[type="file"]:focus-visible) .dropzone { background: var(--accent); color: #000; border-style: solid; }
+.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.photo { margin: 0; display: grid; gap: 6px; align-content: start; }
+.photo:empty { display: none; }
+.photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border: 1px solid var(--fg); display: block; }
+.photo .remove { justify-self: start; padding: 4px 10px; }

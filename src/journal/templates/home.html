@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Journal{% endblock %}
+
+{% block content %}
+<header class="masthead">
+  <h1 class="display">[Journal]</h1>
+  <div class="row rule meta">
+    <span>[{{ today.strftime('%A %-d %B %Y') }}]</span>
+    <label>Open a day <input type="date" id="goto" max="{{ today.isoformat() }}"></label>
+  </div>
+  <a class="cta" href="{{ url_for('today') }}">{{ 'Continue today' if today_saved else 'Journal today' }} &rarr;</a>
+</header>
+
+<nav class="tabs" aria-label="Period">
+  {% for r in ranges %}
+  <a href="{{ url_for('home', range=r.id) }}" {% if r.id == rng.id %}aria-current="page"{% endif %}>{{ r.label }}</a>
+  {% endfor %}
+</nav>
+
+<section class="charts">
+  {% for c in charts %}
+  <figure class="chart">
+    <figcaption class="row meta">
+      <b>{{ c.label }}</b>
+      <span>{{ 'Avg ' ~ c.average if c.average is not none else 'No data' }}</span>
+    </figcaption>
+    <svg viewBox="0 0 600 120" role="img" aria-label="{{ c.label }} over the {{ rng.label|lower }}">
+      {% for y in (8, 64, 112) %}<line x1="0" x2="600" y1="{{ y }}" y2="{{ y }}" class="grid"/>{% endfor %}
+      <path d="{{ c.path }}" class="line"/>
+      {% for x, y in c.dots %}<circle cx="{{ x }}" cy="{{ y }}" r="3.5"/>{% endfor %}
+    </svg>
+    <div class="row meta"><span>{{ start.isoformat() }}</span><span>{{ c.low }} &darr; / {{ c.high }} &uarr;</span><span>{{ today.isoformat() }}</span></div>
+  </figure>
+  {% endfor %}
+</section>
+
+<section class="days">
+  <h2 class="label">Days in this period ({{ entries|length }})</h2>
+  <ul class="archive">
+    {% for e in entries %}
+    <li>
+      <a class="row" href="{{ url_for('entry_page', day=e.date) }}">
+        <span class="dot" data-color="{{ e.color }}"></span>
+        <span>{{ e.date }}</span>
+        <span>Mood {{ e.sections.check_in.mood or '–' }}</span>
+        <span>Energy {{ e.sections.check_in.energy or '–' }}</span>
+        <span>Stress {{ e.sections.check_in.stress or '–' }}</span>
+      </a>
+    </li>
+    {% else %}
+    <li class="prompt">No entries in this period yet.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<footer class="row rule meta"><span>[Local journal]</span><button type="button" id="close" class="btn">Close</button></footer>
+
+<script>
+  document.getElementById("goto").addEventListener("change", (e) => {
+    if (e.target.value) location.href = "/" + e.target.value;
+  });
+</script>
+{% endblock %}

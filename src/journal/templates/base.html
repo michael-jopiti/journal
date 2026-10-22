@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Journal{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    {%- for c in palette %}
+    [data-color="{{ c.id }}"] { --bg: {{ c.bg }}; --fg: {{ c.fg }}; }
+    {%- endfor %}
+  </style>
+</head>
+{% block body_tag %}<body>{% endblock %}
+  <div class="page">
+    {% block content %}{% endblock %}
+  </div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

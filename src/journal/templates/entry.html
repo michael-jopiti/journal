@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Journal {{ day.isoformat() }}{% endblock %}
+{# Colour variables come from the stored colour; app.js updates them live. #}
+{% block body_tag %}
+<body data-day="{{ day.isoformat() }}" data-color="{{ entry.color }}">
+{% endblock %}
+
+{% block content %}
+<header class="masthead">
+  <h1 class="display">[Journal]</h1>
+  <nav class="row rule">
+    <a href="{{ url_for('entry_page', day=prev_day.isoformat()) }}">&larr; {{ prev_day.isoformat() }}</a>
+    {% if not is_today %}<a href="{{ url_for('today') }}">Today</a>{% endif %}
+    <a href="{{ url_for('entry_page', day=next_day.isoformat()) }}">{{ next_day.isoformat() }} &rarr;</a>
+    <a href="{{ url_for('home') }}">Home</a>
+  </nav>
+  <div class="row meta">
+    <span>[{{ day.strftime('%A %-d %B %Y') }}]</span>
+    <span id="status" role="status" aria-live="polite">Saved</span>
+  </div>
+</header>
+
+<form id="entry" autocomplete="off" onsubmit="return false">
+  <section class="block">
+    <h2 class="label"><span class="num">00</span> Page colour</h2>
+    <div class="swatches" role="radiogroup" aria-label="Page colour">
+      {% for c in palette %}
+      <label class="swatch" style="--sw: {{ c.bg }}" title="{{ c.name }}">
+        <input type="radio" name="color" value="{{ c.id }}" {{ 'checked' if c.id == entry.color }}>
+        <span class="sr">{{ c.name }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% for section in sections %}
+  <section class="block" id="{{ section.id }}">
+    <div class="head">
+      <h2 class="label"><span class="num">{{ '%02d' % loop.index }}</span> {{ section.title }}</h2>
+      <p class="prompt">{{ section.prompt }}</p>
+    </div>
+    <div class="fields">
+      {% for f in section.fields %}
+      {% set value = entry.sections[section.id][f.id] %}
+      {% set fid = section.id ~ '-' ~ f.id %}
+      <div class="field">
+        {% if f.kind == 'scale' %}
+        <div class="label" id="{{ fid }}-l">{{ f.label }}</div>
+        <div class="scale" role="radiogroup" aria-labelledby="{{ fid }}-l">
+          {% for n in scale %}
+          <label><input type="radio" name="{{ fid }}" value="{{ n }}"
+                 data-section="{{ section.id }}" data-field="{{ f.id }}" {{ 'checked' if value == n }}><span>{{ n }}</span></label>
+          {% endfor %}
+          <small>{{ f.low }} &ndash; {{ f.high }}</small>
+        </div>
+        {% elif f.kind == 'list' %}
+        <div class="label">{{ f.label }}</div>
+        {% for item in value %}
+        <input type="text" aria-label="{{ f.label }} {{ loop.index }}" maxlength="500" value="{{ item }}"
+               data-section="{{ section.id }}" data-field="{{ f.id }}" data-index="{{ loop.index0 }}"
+               placeholder="{{ loop.index }}.">
+        {% endfor %}
+        {% elif f.kind == 'photos' %}
+        {% macro photo(file, caption) %}
+        <figure class="photo" data-file="{{ file }}">
+          <img src="{{ url_for('image', day=day.isoformat(), name=file) if file else '' }}" alt="{{ caption }}">
+          <input type="text" class="caption" placeholder="Caption" maxlength="500" aria-label="Caption" value="{{ caption }}">
+          <button type="button" class="btn remove">Remove</button>
+        </figure>
+        {% endmacro %}
+        <div class="label" id="{{ fid }}-l">{{ f.label }}</div>
+        <label class="dropzone" for="{{ fid }}">Drop a picture here or choose a file</label>
+        <input type="file" id="{{ fid }}" class="sr" accept="image/jpeg,image/png,image/gif,image/webp" multiple>
+        <div class="photos" data-photos data-section="{{ section.id }}" data-field="{{ f.id }}">
+          {% for p in value %}{{ photo(p.file, p.caption) }}{% endfor %}
+        </div>
+        <template id="photo-tpl">{{ photo('', '') }}</template>
+        {% else %}
+        <label class="label" for="{{ fid }}">{{ f.label }}</label>
+        {% if f.hint %}<small>{{ f.hint }}</small>{% endif %}
+        <textarea id="{{ fid }}" rows="4" data-section="{{ section.id }}" data-field="{{ f.id }}">{{ value }}</textarea>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</form>
+
+<footer class="row rule meta"><span>[Autosaved locally]</span><button type="button" id="close" class="btn">Save &amp; close</button><span>{{ entry.updated_at or 'Not yet saved' }}</span></footer>
+{% endblock %}
