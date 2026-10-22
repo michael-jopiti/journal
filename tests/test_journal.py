@@ -109,3 +109,59 @@ def test_image_upload_rejects_non_images_and_bad_paths(client):
     assert bad.status_code == 415
     assert client.post("/api/entries/2026-10-23/images").status_code == 400
     assert client.get("/images/2026-10-23/..%2Fsecret").status_code == 404
+
+
+def test_numbers_and_tags_are_validated():
+    e = clean_entry(
+        DAY,
+        {
+            "sections": {
+                "habits": {"sleep_hours": 7.5, "alcohol": -1, "exercise": float("nan")},
+                "day": {"emotions": ["sad", "calm", "bogus", {"x": 1}]},
+            }
+        },
+    )
+    assert e["sections"]["habits"] == {"sleep_hours": 7.5, "alcohol": None, "exercise": None}
+    assert e["sections"]["day"]["emotions"] == ["calm", "sad"]  # option order, unknowns dropped
+    assert clean_entry(DAY, {"sections": {"habits": {"alcohol": 0}}})["sections"]["habits"]["alcohol"] == 0
+
+
+def test_streaks_and_gaps(tmp_path):
+    from datetime import timedelta
+
+    from journal.insights import RANGES_BY_ID, day_strip, streaks
+
+    days = {DAY, DAY - timedelta(1), DAY - timedelta(2), DAY - timedelta(5)}
+    assert streaks(days, DAY) == (3, 3)
+    assert streaks(days - {DAY}, DAY) == (2, 2)  # empty today keeps the streak alive
+    assert streaks(set(), DAY) == (0, 0)
+    store = Store(tmp_path)
+    for d in days:
+        store.save(d, {})
+    strip, missed = day_strip(list(store.entries()), RANGES_BY_ID["week"], DAY, min(days))
+    assert len(strip) == 7 and missed == 2  # 2026-10-20 and 21 are gaps
+
+
+def test_number_chart_scales_to_data(tmp_path):
+    from journal.insights import RANGES_BY_ID, build_charts
+
+    store = Store(tmp_path)
+    store.save(DAY, {"sections": {"habits": {"sleep_hours": 6}}})
+    sleep = next(c for c in build_charts(list(store.entries()), RANGES_BY_ID["week"], DAY) if c["id"] == "sleep_hours")
+    assert sleep["average"] == 6 and sleep["axis"] == "0 – 6 h"
+
+
+def test_search_and_export(client):
+    client.put(
+        "/api/entries/2026-10-23",
+        json={"sections": {"day": {"what_happened": "Walked by the LAKE today", "emotions": ["calm"]}, "habits": {"sleep_hours": 8}}},
+    )
+    page = client.get("/search?q=lake").data
+    assert b"<mark>LAKE</mark>" in page and b"2026-10-23" in page
+    assert b"1 day found" in client.get("/search?q=calm").data
+    assert b"0 days found" in client.get("/search?q=zzz").data
+    assert client.get("/search").status_code == 200
+    sheet = client.get("/2026-10-23/export").data
+    assert b"Walked by the LAKE" in sheet and b"8.0 h" in sheet or b"8 h" in sheet
+    assert b"Thought record" not in sheet  # empty sections are skipped
+    assert client.get("/nope/export").status_code == 404

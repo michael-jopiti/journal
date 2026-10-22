@@ -20,6 +20,11 @@
         }));
       } else if (el.type === "radio") {
         if (el.checked) fields[field] = Number(el.value);
+      } else if (el.type === "checkbox") {
+        const chosen = (fields[field] ??= []);
+        if (el.checked) chosen.push(el.value);
+      } else if (el.type === "number") {
+        fields[field] = el.value === "" ? null : Number(el.value);
       } else if (index !== undefined) {
         (fields[field] ??= [])[Number(index)] = el.value;
       } else {
@@ -110,10 +115,17 @@
   }
 
   // Close: save one last time, then stop the server. Stay open if the save fails.
-  document.getElementById("close").addEventListener("click", async () => {
+  document.getElementById("close")?.addEventListener("click", async () => {
     if (form && !(await save())) return;
     await fetch("/api/shutdown", { method: "POST", headers: { "X-Journal": "1" } });
     document.body.innerHTML = '<div class="page"><h1 class="display">[Closed]</h1><p class="meta">Everything is saved. You can close this tab.</p></div>';
     window.close(); // only works for tabs opened by script; harmless otherwise
+  });
+
+  // Export: save first so the PDF page shows the latest text.
+  document.getElementById("export")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const href = e.currentTarget.href;
+    if (await save()) location.href = href;
   });
 })();

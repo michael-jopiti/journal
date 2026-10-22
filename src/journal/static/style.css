@@ -67,7 +67,7 @@ a:hover, a:focus-visible { background: var(--fg); color: var(--bg); }
 .num { display: inline-block; min-width: 2.2em; font-variant-numeric: tabular-nums; }
 
 /* Inputs: brutalist outlined boxes from the UI kit */
-textarea, input[type="text"] {
+textarea, input[type="text"], input[type="number"], input[type="search"] {
   width: 100%;
   font: inherit;
   color: inherit;
@@ -77,7 +77,7 @@ textarea, input[type="text"] {
   padding: 10px 12px;
   resize: vertical;
 }
-textarea:focus, input[type="text"]:focus { outline: 3px solid var(--accent); outline-offset: 0; }
+textarea:focus, input[type="text"]:focus, input[type="number"]:focus, input[type="search"]:focus { outline: 3px solid var(--accent); outline-offset: 0; }
 ::placeholder { color: var(--fg); opacity: .45; }
 
 /* 1-5 scale */
@@ -158,3 +158,51 @@ footer { margin-top: var(--gutter); }
 .photo:empty { display: none; }
 .photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border: 1px solid var(--fg); display: block; }
 .photo .remove { justify-self: start; padding: 4px 10px; }
+
+/* Number inputs and emotion tags */
+input[type="number"] { max-width: 160px; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tags label { cursor: pointer; }
+.tags input { position: absolute; opacity: 0; }
+.tags span { display: block; padding: 8px 14px; border: 1px solid var(--fg); font-weight: 800; text-transform: uppercase; font-size: 13px; }
+.tags input:checked + span { background: var(--fg); color: var(--bg); }
+.tags input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Streaks, gaps, search */
+.stats { margin-top: var(--gutter); font-size: 13px; text-transform: uppercase; letter-spacing: .02em; }
+.stats b { font-size: clamp(28px, 4vw, 44px); letter-spacing: -.03em; margin-right: 6px; vertical-align: -2px; }
+.strip { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: var(--gutter); }
+.cell { width: 14px; height: 14px; border: 1px solid var(--fg); background: var(--bg); }
+.cell:hover, .cell:focus-visible { background: var(--accent); }
+.axis { margin-bottom: 4px; opacity: .8; }
+.search { margin-top: var(--gutter); }
+.hit { display: grid; gap: 6px; padding: 14px 0; }
+.hit .row { justify-content: flex-start; align-items: center; padding: 0; }
+.snippet small { font-size: 12px; font-weight: 800; text-transform: uppercase; margin-right: 6px; }
+mark { background: var(--accent); color: #000; }
+
+/* Export sheet: white page, identical type and rules */
+body.sheet { --bg: #fff; --fg: #000; }
+.sheet .display { font-size: clamp(40px, 9vw, 110px); }
+.lead { margin-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: var(--gutter); }
+.lead-photo { margin: 0; flex: 0 0 min(30%, 280px); text-align: right; }
+.lead-photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border: 1px solid var(--fg); display: block; }
+.lead-photo figcaption { margin-top: 6px; font-size: 13px; }
+.sheet .masthead .tags { margin-top: 12px; }
+.sheet .tags span { background: var(--fg); color: var(--bg); }
+.sheet .block { grid-template-columns: 1fr; gap: 14px; }
+.sheet .fields { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.sheet .field:not(.metric) { grid-column: 1 / -1; }
+.metric .value { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+.value { margin: 0; white-space: pre-wrap; }
+ol.value { padding-left: 1.2em; }
+.photo figcaption { font-size: 14px; }
+@media print {
+  /* Zero page margin makes browsers drop their own header/footer (date, title, URL). */
+  @page { margin: 0; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .noprint { display: none !important; }
+  .page { padding: 14mm; }
+  .block { break-inside: avoid; }
+}
+.cell:not([data-color]) { border-style: dashed; opacity: .45; } /* gap; paper-coloured days stay solid */

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+
+{% block content %}
+<header class="masthead">
+  <h1 class="display">[Search]</h1>
+  <nav class="row rule"><a href="{{ url_for('home') }}">&larr; Home</a></nav>
+  <form class="search" action="{{ url_for('search_page') }}">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search all entries" aria-label="Search all entries" autofocus>
+  </form>
+</header>
+
+<p class="meta">{{ results|length }} {{ 'day' if results|length == 1 else 'days' }} found{{ ' for "' ~ q ~ '"' if q }}</p>
+<ul class="archive">
+  {% for r in results %}
+  <li>
+    <a class="hit" href="{{ url_for('entry_page', day=r.date) }}">
+      <span class="row"><span class="dot" data-color="{{ r.color }}"></span><b>{{ r.date }}</b></span>
+      {% for h in r.hits %}
+      <span class="snippet"><small>{{ h.section }} · {{ h.field }}</small> {{ h.before }}<mark>{{ h.match }}</mark>{{ h.after }}</span>
+      {% endfor %}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

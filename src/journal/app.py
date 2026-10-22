@@ -2,6 +2,8 @@
 
 Pages
     GET  /                    home: check-in charts (?range=week|month|6months|year) and past days
+    GET  /search?q=           full-text search over all entries
+    GET  /<YYYY-MM-DD>/export print-friendly white page of one day (save as PDF from the print dialog)
     GET  /today               redirect to today's entry
     GET  /<YYYY-MM-DD>        edit one day
 
@@ -16,6 +18,7 @@ API (also the hook for scripts and future features)
 
 from __future__ import annotations
 
+import copy
 import os
 import signal
 import threading
@@ -23,7 +26,7 @@ from datetime import date, timedelta
 
 from flask import Flask, abort, jsonify, redirect, render_template, request, send_from_directory, url_for
 
-from .insights import DEFAULT_RANGE, RANGES, RANGES_BY_ID, build_charts, window_start
+from .insights import DEFAULT_RANGE, RANGES, RANGES_BY_ID, build_charts, day_strip, search, streaks, window_start
 from .palette import PALETTE
 from .schema import SCALE_MAX, SECTIONS
 from .storage import IMAGE_NAME, Store, parse_date
@@ -37,6 +40,21 @@ def _day_or_404(value: str) -> date:
         return parse_date(value)
     except ValueError:
         abort(404)
+
+
+def _filled(entry: dict) -> list[tuple[int, object, list[tuple[object, object]]]]:
+    """(section number, section, [(field, value)]) for the non-empty parts of ``entry``."""
+    out = []
+    for n, section in enumerate(SECTIONS, 1):
+        stored = entry["sections"][section.id]
+        fields = [
+            (f, stored[f.id])
+            for f in section.fields
+            if stored[f.id] is not None and stored[f.id] != "" and not (isinstance(stored[f.id], list) and not any(stored[f.id]))
+        ]
+        if fields:
+            out.append((n, section, fields))
+    return out
 
 
 def create_app(data_dir: str | os.PathLike[str] | None = None) -> Flask:
@@ -56,6 +74,9 @@ def create_app(data_dir: str | os.PathLike[str] | None = None) -> Flask:
         today = date.today()
         start = window_start(rng, today)
         entries = list(store.entries(start, today))
+        all_days = store.days()
+        streak, longest = streaks(set(all_days), today)
+        strip, missed = day_strip(entries, rng, today, all_days[-1] if all_days else None)
         return render_template(
             "home.html",
             ranges=RANGES,
@@ -64,8 +85,17 @@ def create_app(data_dir: str | os.PathLike[str] | None = None) -> Flask:
             today=today,
             charts=build_charts(entries, rng, today),
             entries=entries,
+            streak=streak,
+            longest=longest,
+            strip=strip,
+            missed=missed,
             today_saved=any(e["date"] == today.isoformat() for e in entries),
         )
+
+    @app.get("/search")
+    def search_page():
+        q = request.args.get("q", "").strip()
+        return render_template("search.html", q=q, results=search(store.entries(), q))
 
     @app.get("/today")
     def today():
@@ -83,6 +113,25 @@ def create_app(data_dir: str | os.PathLike[str] | None = None) -> Flask:
             is_today=d == date.today(),
             sections=SECTIONS,
             scale=range(1, SCALE_MAX + 1),
+        )
+
+    @app.get("/<day>/export")
+    def export_page(day: str):
+        d = _day_or_404(day)
+        entry = store.load(d)
+        photos = entry["sections"]["pictures"]["photos"]
+        # Emotions and the first picture are shown in the page header, so drop them from the body.
+        body = copy.deepcopy(entry)
+        body["sections"]["day"]["emotions"] = []
+        body["sections"]["pictures"]["photos"] = photos[1:]
+        return render_template(
+            "export.html",
+            entry=entry,
+            day=d,
+            filled=_filled(body),
+            lead_photo=photos[0] if photos else None,
+            emotions=entry["sections"]["day"]["emotions"],
+            scale_max=SCALE_MAX,
         )
 
     @app.get("/api/entries")

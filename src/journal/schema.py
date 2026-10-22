@@ -6,6 +6,7 @@ To add a prompt, add a ``Field`` here; nothing else needs to change.
 Sections follow established psychological practice:
 
 * Check-in      - mood tracking (self-monitoring in CBT / behavioural activation).
+* Body & habits - sleep, alcohol and movement alongside mood (behavioural activation).
 * Gratitude     - "three good things" (Seligman, positive psychology).
 * The day       - expressive writing (Pennebaker): facts first, then feelings.
 * Pictures      - a captioned photo as a memory anchor (photo-elicitation).
@@ -26,6 +27,8 @@ class Kind(StrEnum):
     TEXT = "text"  # free multi-line text -> str
     SCALE = "scale"  # integer 1..SCALE_MAX, or None when unanswered
     LIST = "list"  # fixed number of short text items -> list[str]
+    NUMBER = "number"  # float within [minimum, maximum], or None when unanswered
+    TAGS = "tags"  # subset of Field.options -> list[str], in option order
     PHOTOS = "photos"  # uploaded pictures -> list[{"file": str, "caption": str}]
 
 
@@ -33,6 +36,11 @@ SCALE_MAX = 5
 MAX_TEXT_LENGTH = 20_000
 MAX_CAPTION_LENGTH = 500
 MAX_PHOTOS = 12
+
+EMOTIONS = (
+    "joyful", "calm", "grateful", "proud", "hopeful", "tired",
+    "anxious", "sad", "angry", "lonely", "overwhelmed", "bored",
+)  # fmt: skip
 
 
 @dataclass(frozen=True)
@@ -44,6 +52,11 @@ class Field:
     count: int = 1  # number of items, only used by Kind.LIST
     low: str = ""  # scale end labels, only used by Kind.SCALE
     high: str = ""
+    minimum: float = 0  # Kind.NUMBER bounds, step and display unit
+    maximum: float = 0
+    step: float = 1
+    unit: str = ""
+    options: tuple[str, ...] = ()  # allowed values, only used by Kind.TAGS
 
 
 @dataclass(frozen=True)
@@ -66,6 +79,16 @@ SECTIONS: tuple[Section, ...] = (
         ),
     ),
     Section(
+        "habits",
+        "Body & habits",
+        "Sleep, alcohol and movement shape mood. Record them without judging.",
+        (
+            Field("sleep_hours", "Sleep", Kind.NUMBER, maximum=24, step=0.5, unit="h"),
+            Field("alcohol", "Alcohol", Kind.NUMBER, maximum=50, unit="drinks"),
+            Field("exercise", "Exercise", Kind.NUMBER, maximum=1440, step=5, unit="min"),
+        ),
+    ),
+    Section(
         "gratitude",
         "Gratitude",
         "Three specific things that went well today. Add why they happened.",
@@ -77,6 +100,7 @@ SECTIONS: tuple[Section, ...] = (
         "Write without editing. Facts first, then feelings.",
         (
             Field("what_happened", "What happened", hint="Events, people, decisions."),
+            Field("emotions", "Emotions", Kind.TAGS, hint="Tap every emotion present today.", options=EMOTIONS),
             Field(
                 "feelings",
                 "What I felt",

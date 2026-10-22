@@ -4,19 +4,24 @@ A small journal that runs on your own computer. Each day has a few short prompts
 
 ![Home page](docs/screenshot.png)
 
-## Prompts
+## What it does
 
-Each day has seven sections:
+Each day has eight sections:
 
 - **Check-in:** mood, energy and stress, each on a 1 to 5 scale
+- **Body & habits:** sleep, alcohol and exercise
 - **Gratitude:** three things that went well
-- **The day:** what happened and how you felt
+- **The day:** what happened, emotion tags, and how you felt
 - **Pictures:** photos with captions
 - **Thought record:** examine one difficult thought (CBT)
 - **Self-compassion:** what you would say to a friend
 - **Tomorrow:** one intention
 
-You can also pick a page colour for each day. Entries save as you type.
+You can pick a page colour for each day. Entries save as you type.
+
+The home page shows each number over the past week, month, six months or year. It also shows your current and longest streak, and a strip of squares that marks the days you missed. Search finds any word across all entries.
+
+**Export PDF** opens a white print version of the day in the same style. Choose "Save as PDF" in the print dialog.
 
 ## Getting started
 

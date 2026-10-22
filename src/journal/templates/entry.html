@@ -12,6 +12,7 @@
     <a href="{{ url_for('entry_page', day=prev_day.isoformat()) }}">&larr; {{ prev_day.isoformat() }}</a>
     {% if not is_today %}<a href="{{ url_for('today') }}">Today</a>{% endif %}
     <a href="{{ url_for('entry_page', day=next_day.isoformat()) }}">{{ next_day.isoformat() }} &rarr;</a>
+    <a href="{{ url_for('export_page', day=day.isoformat(), print=1) }}" id="export">Export PDF</a>
     <a href="{{ url_for('home') }}">Home</a>
   </nav>
   <div class="row meta">
@@ -60,6 +61,19 @@
                data-section="{{ section.id }}" data-field="{{ f.id }}" data-index="{{ loop.index0 }}"
                placeholder="{{ loop.index }}.">
         {% endfor %}
+        {% elif f.kind == 'number' %}
+        <label class="label" for="{{ fid }}">{{ f.label }} <small>({{ f.unit }})</small></label>
+        <input type="number" id="{{ fid }}" inputmode="decimal" min="{{ f.minimum }}" max="{{ f.maximum }}" step="{{ f.step }}"
+               value="{{ '' if value is none else value }}" data-section="{{ section.id }}" data-field="{{ f.id }}">
+        {% elif f.kind == 'tags' %}
+        <div class="label" id="{{ fid }}-l">{{ f.label }}</div>
+        {% if f.hint %}<small>{{ f.hint }}</small>{% endif %}
+        <div class="tags" role="group" aria-labelledby="{{ fid }}-l">
+          {% for o in f.options %}
+          <label><input type="checkbox" value="{{ o }}" data-section="{{ section.id }}" data-field="{{ f.id }}"
+                 {{ 'checked' if o in value }}><span>{{ o }}</span></label>
+          {% endfor %}
+        </div>
         {% elif f.kind == 'photos' %}
         {% macro photo(file, caption) %}
         <figure class="photo" data-file="{{ file }}">

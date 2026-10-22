@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Journal {{ day.isoformat() }}{% endblock %}
+{# White sheet: same type and rules as the app. Emotions sit under the title, the lead picture top right. #}
+{% block body_tag %}<body class="sheet">{% endblock %}
+
+{% block content %}
+<div class="row noprint">
+  <a href="{{ url_for('entry_page', day=day.isoformat()) }}">&larr; Back</a>
+  <button type="button" class="btn" onclick="print()">Print / save as PDF</button>
+</div>
+
+<header class="masthead">
+  <div class="lead">
+    <h1 class="display">[Journal]</h1>
+    {% if lead_photo %}
+    <figure class="lead-photo">
+      <img src="{{ url_for('image', day=day.isoformat(), name=lead_photo.file) }}" alt="{{ lead_photo.caption }}">
+      {% if lead_photo.caption %}<figcaption>{{ lead_photo.caption }}</figcaption>{% endif %}
+    </figure>
+    {% endif %}
+  </div>
+  <div class="row rule meta">
+    <span>[{{ day.strftime('%A %-d %B %Y') }}]</span>
+    <span class="dot" data-color="{{ entry.color }}" title="Page colour"></span>
+  </div>
+  {% if emotions %}
+  <div class="tags" aria-label="Emotions">{% for e in emotions %}<span>{{ e }}</span>{% endfor %}</div>
+  {% endif %}
+</header>
+
+{% for n, section, fields in filled %}
+<section class="block">
+  <h2 class="label"><span class="num">{{ '%02d' % n }}</span> {{ section.title }}</h2>
+  <div class="fields">
+    {% for f, value in fields %}
+    <div class="field {{ 'metric' if f.kind in ('scale', 'number') }}">
+      <div class="label">{{ f.label }}</div>
+      {% if f.kind == 'scale' %}<p class="value">{{ value }} / {{ scale_max }}</p>
+      {% elif f.kind == 'number' %}<p class="value">{{ value }} {{ f.unit }}</p>
+      {% elif f.kind == 'tags' %}<p class="value">{{ value|join(', ') }}</p>
+      {% elif f.kind == 'list' %}<ol class="value">{% for i in value if i %}<li>{{ i }}</li>{% endfor %}</ol>
+      {% elif f.kind == 'photos' %}
+      <div class="photos">
+        {% for p in value %}
+        <figure class="photo"><img src="{{ url_for('image', day=day.isoformat(), name=p.file) }}" alt="{{ p.caption }}"><figcaption>{{ p.caption }}</figcaption></figure>
+        {% endfor %}
+      </div>
+      {% else %}<p class="value">{{ value }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<p class="prompt">Nothing written for this day.</p>
+{% endfor %}
+
+<script>
+  // Opened via "Export PDF": show the print dialog once images have loaded.
+  if (location.search.includes("print=1")) addEventListener("load", () => print());
+</script>
+{% endblock %}

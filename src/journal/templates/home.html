@@ -8,8 +8,20 @@
     <span>[{{ today.strftime('%A %-d %B %Y') }}]</span>
     <label>Open a day <input type="date" id="goto" max="{{ today.isoformat() }}"></label>
   </div>
+  <form class="search" action="{{ url_for('search_page') }}">
+    <input type="search" name="q" placeholder="Search all entries" aria-label="Search all entries">
+  </form>
   <a class="cta" href="{{ url_for('today') }}">{{ 'Continue today' if today_saved else 'Journal today' }} &rarr;</a>
 </header>
+
+<section class="stats row rule" aria-label="Consistency">
+  <span><b>{{ streak }}</b> day streak</span>
+  <span><b>{{ longest }}</b> longest streak</span>
+  <span><b>{{ missed }}</b> missed in this period</span>
+</section>
+<div class="strip" aria-label="Days in this period, empty squares are gaps">
+  {% for s in strip %}<a class="cell" {% if s.color %}data-color="{{ s.color }}"{% endif %} href="{{ url_for('entry_page', day=s.date) }}" title="{{ s.date }}{{ '' if s.color else ' (no entry)' }}"><span class="sr">{{ s.date }}</span></a>{% endfor %}
+</div>
 
 <nav class="tabs" aria-label="Period">
   {% for r in ranges %}
@@ -24,12 +36,13 @@
       <b>{{ c.label }}</b>
       <span>{{ 'Avg ' ~ c.average if c.average is not none else 'No data' }}</span>
     </figcaption>
+    <div class="meta axis">{{ c.axis }}</div>
     <svg viewBox="0 0 600 120" role="img" aria-label="{{ c.label }} over the {{ rng.label|lower }}">
       {% for y in (8, 64, 112) %}<line x1="0" x2="600" y1="{{ y }}" y2="{{ y }}" class="grid"/>{% endfor %}
       <path d="{{ c.path }}" class="line"/>
       {% for x, y in c.dots %}<circle cx="{{ x }}" cy="{{ y }}" r="3.5"/>{% endfor %}
     </svg>
-    <div class="row meta"><span>{{ start.isoformat() }}</span><span>{{ c.low }} &darr; / {{ c.high }} &uarr;</span><span>{{ today.isoformat() }}</span></div>
+    <div class="row meta"><span>{{ start.isoformat() }}</span><span>{{ today.isoformat() }}</span></div>
   </figure>
   {% endfor %}
 </section>

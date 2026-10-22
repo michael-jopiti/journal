@@ -16,6 +16,7 @@ collection trivially loadable (``Store.entries()``, ``jq``, ``pandas.read_json``
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 import tempfile
@@ -73,6 +74,17 @@ def _clean_field(field: Field, value: Any) -> Any:
             items = value if isinstance(value, list) else []
             items = items[: field.count] + [""] * (field.count - len(items))
             return [_clean_text(i) for i in items]
+        case Kind.NUMBER:
+            ok = (
+                isinstance(value, int | float)
+                and not isinstance(value, bool)
+                and math.isfinite(value)
+                and field.minimum <= value <= field.maximum
+            )
+            return value if ok else None
+        case Kind.TAGS:
+            chosen = {v for v in value if isinstance(v, str)} if isinstance(value, list) else set()
+            return [o for o in field.options if o in chosen]
         case Kind.PHOTOS:
             items = value if isinstance(value, list) else []
             return [
